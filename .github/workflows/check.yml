@@ -23,3 +23,23 @@ jobs:
         run: |
           test -f LICENSE
           test -f main.py
+      - name: Exercise move selector without external services
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          tree=ast.parse(Path("main.py").read_text())
+          funcs=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ("board_of","choose")]
+          assert len(funcs)==2
+          ns={}
+          exec(compile(ast.Module(body=funcs,type_ignores=[]),"<engine-test>","exec"),ns)
+          cases=[
+            ("4k3/8/8/8/8/8/4q3/4KQ2 w - - 0 1",["f1e2","f1f2"]),
+            ("4k3/8/8/8/8/8/8/4KQ2 w - - 0 1",["f1f2","f1f3"])
+          ]
+          for fen,legal in cases:
+            move=ns["choose"](fen,legal)
+            assert move in legal,(fen,move)
+            print("legal selection:",move)
+          assert ns["choose"](*cases[0])=="f1e2","Missed free queen"
+          PY
