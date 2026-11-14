@@ -1,0 +1,25 @@
+name: Tiny Chess basic checks
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Validate syntax and size
+        run: |
+          python -m py_compile main.py
+          python - <<'PY'
+          from pathlib import Path
+          size = Path('main.py').stat().st_size
+          print(f'main.py: {size} bytes')
+          assert size <= 4096, 'Engine exceeds 4096-byte limit'
+          PY
+      - name: Validate required files
+        run: |
+          test -f LICENSE
+          test -f main.py
