@@ -63,8 +63,12 @@ def choose(fen, legal):
         if piece.lower()=="p" and src[0]!=dst[0] and dst not in board:
             after.pop(dst[0]+src[1],None)
         after[dst]=(move[4].upper() if side=="w" else move[4]) if len(move)==5 else piece
+        if piece.lower()=="k" and abs(ord(src[0])-ord(dst[0]))==2:
+            rook=("h" if dst[0]=="g" else "a")+src[1]
+            after[("f" if dst[0]=="g" else "d")+src[1]]=after.pop(rook)
         attackers=threat(after,dst,enemy)
         defenders=threat(after,dst,own)
+        piece=after[dst]
         risk=0
         if attackers:
             risk=weights[piece.lower()] * (0.95 if not defenders else 0.45)

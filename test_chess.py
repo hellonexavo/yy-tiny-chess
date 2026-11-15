@@ -19,6 +19,9 @@ class TinyChessTests(unittest.TestCase):
         fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
         legal = ["e7e5", "c7c5", "g8f6"]
         self.assertIn(NAMESPACE["choose"](fen, legal), legal)
+    def test_avoids_losing_promoted_queen(self):
+        fen = "r7/6P1/4k3/8/8/8/8/4K3 w - - 0 1"
+        self.assertEqual(NAMESPACE["choose"](fen, ["g7g8q", "e1e2"]), "e1e2")
     def test_board_parsing(self):
         self.assertEqual(NAMESPACE["board_of"]("8/8/8/3k4/8/8/8/4K3 w - - 0 1"), {"d5":"k","e1":"K"})
     def test_deterministic_choice(self):
