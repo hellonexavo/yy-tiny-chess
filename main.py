@@ -62,7 +62,7 @@ def choose(fen, legal):
         after=dict(board);after.pop(src)
         if piece.lower()=="p" and src[0]!=dst[0] and dst not in board:
             after.pop(dst[0]+src[1],None)
-        after[dst]=piece.upper() if len(move)==5 and own(piece) and side=="w" else (piece.lower() if len(move)==5 else piece)
+        after[dst]=(move[4].upper() if side=="w" else move[4]) if len(move)==5 else piece
         attackers=threat(after,dst,enemy)
         defenders=threat(after,dst,own)
         risk=0
