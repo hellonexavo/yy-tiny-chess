@@ -1,25 +1,19 @@
-name: Verify Tiny Chess
+name: Verify YY Agent
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
-  verify:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      matrix:
+        python: ['3.9', '3.13']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
-      - run: python -m unittest discover -p 'test_chess.py' -v
-      - run: |
-          test -f LICENSE
-          python -m py_compile main.py
-          python - <<'PY'
-          import pathlib,subprocess
-          sizes={p:pathlib.Path(p).stat().st_size for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0') if p}
-          print(sizes,sum(sizes.values()))
-          assert sizes['main.py']<=4096
-          assert max(sizes.values())<=4096
-          assert sum(sizes.values())<=8192
-          PY
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest discover -s yy_agent -p 'test_*.py' -v
+      - run: python yy_agent/agent.py --help
+      - run: python -m py_compile yy_agent/agent.py
