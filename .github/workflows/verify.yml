@@ -1,8 +1,5 @@
 name: Verify Tiny Chess
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
@@ -15,15 +12,14 @@ jobs:
         with:
           python-version: '3.13'
       - run: python -m unittest discover -p 'test_chess.py' -v
-      - name: Check tracked source size limits
-        run: |
+      - run: |
+          test -f LICENSE
+          python -m py_compile main.py
           python - <<'PY'
-          import pathlib, subprocess
-          files = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
-          sizes = {p: pathlib.Path(p).stat().st_size for p in files if p}
-          print(sizes)
-          print('Total bytes:', sum(sizes.values()))
-          assert sizes['main.py'] <= 4096, 'main.py exceeds 4096 bytes'
-          assert all(n <= 4096 for n in sizes.values()), 'A tracked file exceeds 4096 bytes'
-          assert sum(sizes.values()) <= 8192, 'Tracked source exceeds 8192 bytes'
+          import pathlib,subprocess
+          sizes={p:pathlib.Path(p).stat().st_size for p in subprocess.check_output(['git','ls-files','-z']).decode().split('\0') if p}
+          print(sizes,sum(sizes.values()))
+          assert sizes['main.py']<=4096
+          assert max(sizes.values())<=4096
+          assert sum(sizes.values())<=8192
           PY
