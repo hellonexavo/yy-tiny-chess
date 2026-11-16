@@ -212,6 +212,9 @@ def main():
     run = sub.add_parser("run")
     run.add_argument("slug")
     run.add_argument("--timeout", type=int, default=3600)
+    worker = sub.add_parser("work", help="Execute a bounded queue of free tasks")
+    worker.add_argument("--max-tasks", type=int, default=1)
+    worker.add_argument("--timeout", type=int, default=3600)
     sub.add_parser("status")
     args = parser.parse_args()
     if args.command == "scan":
@@ -222,6 +225,30 @@ def main():
         if args.timeout <= 0:
             parser.error("--timeout must be positive")
         run_task(args.slug, args.root, args.timeout)
+    elif args.command == "work":
+        if args.max_tasks < 1 or args.timeout < 1:
+            parser.error("Task count and timeout must be positive")
+        attempted = set()
+        for path in args.root.expanduser().glob("*/state.json"):
+            attempted.add(json.loads(path.read_text()).get("slug"))
+        count = 0
+        for item in discover():
+            slug = item["slug"]
+            if slug in attempted or item.get("status") != "open" or not item.get("free"):
+                continue
+            if count >= args.max_tasks:
+                break
+            count += 1
+            try:
+                state = run_task(slug, args.root, args.timeout)
+            except Exception as exc:
+                print(slug + ": " + str(exc), file=sys.stderr)
+                break
+            if state["state"] != "needs_review":
+                break
+            if state.get("agent_report", {}).get("status") != "built":
+                break
+        print("Runs started:", count)
     else:
         for path in sorted(args.root.expanduser().glob("*/state.json")):
             print(path.read_text())
